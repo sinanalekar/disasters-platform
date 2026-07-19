@@ -3,6 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://disasters-platform.vercel.app"),
   title: {
     default: "Disasters – Emergency & Public Safety Platform",
     template: "%s | Disasters",

@@ -32,8 +32,8 @@ function AuthForm() {
   }
 
   return (
-    <main id="main-content" style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr minmax(360px, 560px)" }}>
-      <section style={{ background: "var(--primary-strong)", color: "white", padding: "clamp(2rem, 6vw, 6rem)", display: "grid", alignContent: "center" }}>
+    <main id="main-content" style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(360px, 560px)", overflowX: "hidden" }}>
+      <section style={{ minWidth: 0, background: "var(--primary-strong)", color: "white", padding: "clamp(2rem, 6vw, 6rem)", display: "grid", alignContent: "center" }}>
         <a href="tel:112" style={{ display: "inline-flex", gap: 8, alignItems: "center", marginBottom: "auto" }}><Siren size={18} /> Emergency 112</a>
         <div style={{ maxWidth: 630 }}>
           <Image src="/icons/icon-512.png" alt="Disasters" width={106} height={106} style={{ borderRadius: 20, marginBottom: 22 }} priority />
@@ -44,7 +44,7 @@ function AuthForm() {
         <p style={{ marginTop: "auto", opacity: .68 }}><ShieldCheck size={17} style={{ display: "inline", verticalAlign: "-3px" }} /> Protected by Firebase Authentication and role-based access controls.</p>
       </section>
 
-      <section style={{ padding: "clamp(1.5rem, 6vw, 4rem)", display: "grid", alignContent: "center", background: "var(--surface)" }}>
+      <section style={{ minWidth: 0, padding: "clamp(1.5rem, 6vw, 4rem)", display: "grid", alignContent: "center", background: "var(--surface)" }}>
         <div className="auth-panel" style={{ maxWidth: 430, width: "100%", margin: "0 auto" }}>
           <div className="eyebrow">Welcome to Disasters</div>
           <h2 style={{ fontSize: "2rem", margin: ".35rem 0 .5rem" }}>Choose how to continue</h2>
