@@ -21,7 +21,10 @@ const outputSchema = z.object({
   priority: z.enum(["critical", "high", "medium", "low"]),
   confidence: z.number().min(0).max(1),
   summary: z.string(),
-  reasoning: z.array(z.string()).min(1).max(5),
+  reasoning: z.preprocess(
+    (value) => typeof value === "string" ? [value] : value,
+    z.array(z.string()).min(1).max(5),
+  ),
   requiresHumanReview: z.boolean(),
 });
 
@@ -53,7 +56,23 @@ async function geminiTriage(input: z.infer<typeof requestSchema>, settings: AiSe
   const response = await ai.models.generateContent({
     model: settings.geminiModel || DEFAULT_AI_SETTINGS.geminiModel,
     contents: [{ role: "user", parts }],
-    config: { responseMimeType: "application/json", temperature: 0.1 },
+    config: {
+      responseMimeType: "application/json",
+      responseJsonSchema: {
+        type: "object",
+        additionalProperties: false,
+        required: ["category", "priority", "confidence", "summary", "reasoning", "requiresHumanReview"],
+        properties: {
+          category: { type: "string", enum: ["fire", "medical", "accident", "crime", "flood", "water", "electricity", "road", "sanitation", "other"] },
+          priority: { type: "string", enum: ["critical", "high", "medium", "low"] },
+          confidence: { type: "number", minimum: 0, maximum: 1 },
+          summary: { type: "string" },
+          reasoning: { type: "array", minItems: 1, maxItems: 5, items: { type: "string" } },
+          requiresHumanReview: { type: "boolean" },
+        },
+      },
+      temperature: 0.1,
+    },
   });
   const parsed = outputSchema.parse(JSON.parse(response.text || "{}"));
   return {
