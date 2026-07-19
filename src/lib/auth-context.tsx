@@ -11,16 +11,15 @@ import {
 } from "react";
 import {
   GoogleAuthProvider,
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
+  signInAnonymously,
+  signInWithCredential,
   signInWithPopup,
   signOut as firebaseSignOut,
-  updateProfile,
   type User,
 } from "firebase/auth";
+import { Capacitor } from "@capacitor/core";
+import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { ROLE_DEFAULT_PERMISSIONS, SUPER_ADMIN_EMAIL } from "./constants";
@@ -32,10 +31,8 @@ interface AuthValue {
   loading: boolean;
   isAdmin: boolean;
   isStaff: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (name: string, email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  signInAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -115,28 +112,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
-  }, []);
-
-  const signUp = useCallback(async (name: string, email: string, password: string) => {
-    const credential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(credential.user, { displayName: name });
-    if (email.trim().toLowerCase() === SUPER_ADMIN_EMAIL) {
-      await sendEmailVerification(credential.user, { url: `${window.location.origin}/auth` });
-    }
-    await ensureProfile(credential.user);
-  }, []);
-
   const signInWithGoogle = useCallback(async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
+    if (Capacitor.isNativePlatform()) {
+      const nativeResult = await FirebaseAuthentication.signInWithGoogle({ skipNativeAuth: true });
+      if (!nativeResult.credential?.idToken) throw new Error("Google did not return a valid identity token.");
+      const googleCredential = GoogleAuthProvider.credential(nativeResult.credential.idToken);
+      const credential = await signInWithCredential(auth, googleCredential);
+      await ensureProfile(credential.user);
+      return;
+    }
     const credential = await signInWithPopup(auth, provider);
     await ensureProfile(credential.user);
   }, []);
 
-  const resetPassword = useCallback(async (email: string) => {
-    await sendPasswordResetEmail(auth, email);
+  const signInAsGuest = useCallback(async () => {
+    const credential = await signInAnonymously(auth);
+    await ensureProfile(credential.user);
   }, []);
 
   const refreshProfile = useCallback(async () => {
@@ -151,16 +144,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       profile,
       loading,
-      isAdmin: role === "admin" || role === "super_admin" || user?.email?.toLowerCase() === SUPER_ADMIN_EMAIL,
+      isAdmin: role === "admin" || role === "super_admin" || (
+        user?.email?.toLowerCase() === SUPER_ADMIN_EMAIL && user.emailVerified
+      ),
       isStaff: !!role && role !== "citizen",
-      signIn,
-      signUp,
       signInWithGoogle,
-      resetPassword,
+      signInAsGuest,
       signOut: () => firebaseSignOut(auth),
       refreshProfile,
     };
-  }, [user, profile, loading, signIn, signUp, signInWithGoogle, resetPassword, refreshProfile]);
+  }, [user, profile, loading, signInWithGoogle, signInAsGuest, refreshProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -1,79 +1,91 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useEffect, useState } from "react";
-import { ArrowLeft, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
+import { ShieldCheck, Siren, UserRound } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 
 function AuthForm() {
-  const { user, signIn, signUp, resetPassword } = useAuth();
+  const { user, signInWithGoogle, signInAsGuest } = useAuth();
   const router = useRouter();
   const search = useSearchParams();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<"google" | "guest" | null>(null);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     if (user) router.replace(search.get("next") || "/dashboard");
   }, [user, router, search]);
 
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true); setError(""); setNotice("");
+  async function continueWith(method: "google" | "guest") {
+    setBusy(method);
+    setError("");
     try {
-      if (mode === "signup") await signUp(name.trim(), email.trim(), password);
-      else await signIn(email.trim(), password);
+      if (method === "google") await signInWithGoogle();
+      else await signInAsGuest();
       router.push(search.get("next") || "/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message.replace("Firebase: ", "") : "Unable to continue.");
-    } finally { setBusy(false); }
-  }
-
-  async function forgot() {
-    if (!email) { setError("Enter your email first."); return; }
-    setBusy(true); setError("");
-    try { await resetPassword(email); setNotice("Password reset email sent."); }
-    catch (err) { setError(err instanceof Error ? err.message : "Unable to send reset email."); }
-    finally { setBusy(false); }
+      setError(err instanceof Error ? err.message.replace("Firebase: ", "") : "Sign-in could not be completed.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
     <main id="main-content" style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr minmax(360px, 560px)" }}>
       <section style={{ background: "var(--primary-strong)", color: "white", padding: "clamp(2rem, 6vw, 6rem)", display: "grid", alignContent: "center" }}>
-        <Link href="/" style={{ display: "inline-flex", gap: 8, alignItems: "center", marginBottom: "auto" }}><ArrowLeft size={18} /> Home</Link>
+        <a href="tel:112" style={{ display: "inline-flex", gap: 8, alignItems: "center", marginBottom: "auto" }}><Siren size={18} /> Emergency 112</a>
         <div style={{ maxWidth: 630 }}>
-          <Image src="/icons/icon-512.png" alt="Disasters" width={106} height={106} style={{ borderRadius: 20, marginBottom: 22 }} />
+          <Image src="/icons/icon-512.png" alt="Disasters" width={106} height={106} style={{ borderRadius: 20, marginBottom: 22 }} priority />
           <div className="eyebrow" style={{ color: "var(--focus)" }}>Emergency & public safety</div>
           <h1 style={{ fontSize: "clamp(2.4rem, 6vw, 4.8rem)", letterSpacing: "-.06em", lineHeight: 1, margin: ".6rem 0 1rem" }}>One account. Every report. Full visibility.</h1>
-          <p style={{ opacity: .78, fontSize: "1.12rem" }}>Create incidents, receive live updates, message the responding team, and confirm when the issue is resolved.</p>
+          <p style={{ opacity: .78, fontSize: "1.12rem" }}>Report incidents, receive live updates, message responders, and follow every case through resolution.</p>
         </div>
         <p style={{ marginTop: "auto", opacity: .68 }}><ShieldCheck size={17} style={{ display: "inline", verticalAlign: "-3px" }} /> Protected by Firebase Authentication and role-based access controls.</p>
       </section>
+
       <section style={{ padding: "clamp(1.5rem, 6vw, 4rem)", display: "grid", alignContent: "center", background: "var(--surface)" }}>
-        <div style={{ maxWidth: 430, width: "100%", margin: "0 auto" }}>
-          <div className="eyebrow">Welcome</div>
-          <h2 style={{ fontSize: "2rem", margin: ".35rem 0 .5rem" }}>{mode === "signin" ? "Sign in to continue" : "Create your citizen account"}</h2>
-          <p className="muted" style={{ marginTop: 0 }}>{mode === "signin" ? "Use your registered email and password." : "You can report and track incidents immediately."}</p>
+        <div className="auth-panel" style={{ maxWidth: 430, width: "100%", margin: "0 auto" }}>
+          <div className="eyebrow">Welcome to Disasters</div>
+          <h2 style={{ fontSize: "2rem", margin: ".35rem 0 .5rem" }}>Choose how to continue</h2>
+          <p className="muted" style={{ marginTop: 0, marginBottom: 24 }}>No password is required.</p>
+
           {error && <div className="alert alert-danger" role="alert" style={{ marginBottom: 16 }}>{error}</div>}
-          {notice && <div className="alert" role="status" style={{ marginBottom: 16 }}>{notice}</div>}
-          <form onSubmit={submit} style={{ display: "grid", gap: 15 }}>
-            {mode === "signup" && <label className="field"><span className="label">Full name</span><input className="input" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" /></label>}
-            <label className="field"><span className="label">Email address</span><input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" /></label>
-            <label className="field"><span className="label">Password</span><div style={{ position: "relative" }}><input className="input" style={{ paddingRight: 48 }} type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} autoComplete={mode === "signup" ? "new-password" : "current-password"} /><button type="button" className="btn btn-ghost" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: 2, top: 2, minHeight: 40, padding: 8 }}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div></label>
-            {mode === "signin" && <button type="button" className="btn btn-ghost" onClick={forgot} style={{ justifySelf: "end", minHeight: 30, padding: 0 }}>Forgot password?</button>}
-            <button className="btn btn-primary" disabled={busy}>{busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}</button>
-          </form>
-          <p style={{ textAlign: "center", marginTop: 20 }}>{mode === "signin" ? "New to Disasters?" : "Already have an account?"} <button className="btn btn-ghost" style={{ minHeight: 30, padding: 4 }} onClick={() => setMode(mode === "signin" ? "signup" : "signin")}>{mode === "signin" ? "Create account" : "Sign in"}</button></p>
+
+          <div style={{ display: "grid", gap: 12 }}>
+            <button type="button" className="btn btn-secondary google-button" onClick={() => continueWith("google")} disabled={busy !== null}>
+              <span className="google-mark" aria-hidden="true">G</span>
+              {busy === "google" ? "Opening Google…" : "Continue with Google"}
+            </button>
+            <button type="button" className="btn btn-primary guest-button" onClick={() => continueWith("guest")} disabled={busy !== null}>
+              <UserRound size={21} />
+              {busy === "guest" ? "Creating guest access…" : "Continue as guest"}
+            </button>
+          </div>
+
+          <div className="card-flat guest-note">
+            <strong>Guest access</strong>
+            <p className="muted">Reports and messages remain connected to this browser or device. Use Google when you want access across devices or administrator permissions.</p>
+          </div>
+
+          <p className="muted" style={{ textAlign: "center", fontSize: ".78rem", marginTop: 18 }}>By continuing, you agree to use the platform only for genuine public-safety and civic reports.</p>
         </div>
       </section>
-      <style jsx>{`@media (max-width: 850px) { main { grid-template-columns: 1fr !important; } main > section:first-child { min-height: 320px; } }`}</style>
+
+      <style jsx>{`
+        .auth-panel { padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid var(--border); border-radius: 24px; background: color-mix(in srgb, var(--surface) 96%, transparent); box-shadow: 0 24px 70px rgba(7, 59, 103, .12); }
+        .google-button, .guest-button { min-height: 56px; width: 100%; font-size: .98rem; }
+        .google-button { background: white; color: #172b4d; border-color: #cbd5e1; }
+        .google-mark { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; color: #4285f4; background: #fff; font: 900 1.05rem/1 system-ui; box-shadow: inset 0 0 0 1px #e2e8f0; }
+        .guest-note { padding: 14px 16px; margin-top: 18px; }
+        .guest-note p { margin: 5px 0 0; font-size: .86rem; }
+        @media (max-width: 850px) {
+          main { grid-template-columns: 1fr !important; }
+          main > section:first-child { min-height: 300px; padding-bottom: 2rem !important; }
+          main > section:first-child > div { margin-top: 2.5rem; }
+          .auth-panel { border-radius: 20px; }
+        }
+      `}</style>
     </main>
   );
 }

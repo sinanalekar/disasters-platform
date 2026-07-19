@@ -26,7 +26,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Then open `http://localhost:3000`. Email/password Authentication must be enabled in the linked Firebase project.
+Then open `http://localhost:3000`. Google and Anonymous Authentication must be enabled in the linked Firebase project. The checked-in Firebase Auth configuration can be applied with `firebase deploy --only auth`.
 
 ## Validation
 

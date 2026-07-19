@@ -13,6 +13,13 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     backgroundColor: "#ffffff",
   },
+  plugins: {
+    FirebaseAuthentication: {
+      authDomain: "civicshield-india-sinan.firebaseapp.com",
+      skipNativeAuth: true,
+      providers: ["google.com"],
+    },
+  },
 };
 
 export default config;

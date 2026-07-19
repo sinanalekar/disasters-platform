@@ -1,8 +1,9 @@
 "use client";
 
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, indexedDBLocalPersistence, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { Capacitor } from "@capacitor/core";
 import { firebaseApiKey, firebaseProjectId } from "./firebase-config";
 
 const firebaseConfig = {
@@ -15,5 +16,12 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-export const auth = getAuth(firebaseApp);
+export const auth = (() => {
+  if (!Capacitor.isNativePlatform()) return getAuth(firebaseApp);
+  try {
+    return initializeAuth(firebaseApp, { persistence: indexedDBLocalPersistence });
+  } catch {
+    return getAuth(firebaseApp);
+  }
+})();
 export const db = getFirestore(firebaseApp);

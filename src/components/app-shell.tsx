@@ -74,13 +74,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="muted" style={{ fontSize: ".7rem" }}>Report · Detect · Respond</span>
             </div>
           </Link>
-          <nav aria-label="Primary navigation" style={{ display: "flex", alignItems: "center", gap: 4 }} className="desktop-nav">
-            {nav.map(({ href, label, icon: Icon }) => (
-              <Link key={href} href={href} className={clsx("btn btn-ghost", pathname.startsWith(href) && "active-nav")} style={pathname.startsWith(href) ? { background: "var(--primary-soft)" } : undefined}>
-                <Icon size={18} /> {label}
-              </Link>
-            ))}
-          </nav>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Link href="/notifications" className="btn btn-ghost" aria-label="Notifications"><Bell size={20} /></Link>
             <details style={{ position: "relative" }}>
@@ -109,26 +102,37 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
         {children}
       </main>
-      <nav aria-label="Mobile navigation" className="mobile-nav">
-        {nav.slice(0, 5).map(({ href, label, icon: Icon }) => (
-          <Link key={href} href={href} className={clsx(pathname.startsWith(href) && "mobile-active")}>
+      <nav aria-label="Primary navigation" className="floating-nav">
+        {nav.map(({ href, label, icon: Icon }) => (
+          <Link key={href} href={href} className={clsx(pathname.startsWith(href) && "floating-active")}>
             <Icon size={21} /> <span>{label}</span>
           </Link>
         ))}
       </nav>
       <style jsx global>{`
-        .mobile-nav { display: none; }
+        .floating-nav {
+          position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
+          bottom: max(12px, env(safe-area-inset-bottom));
+          display: flex; align-items: stretch; gap: 4px;
+          max-width: calc(100vw - 24px); overflow-x: auto; scrollbar-width: none;
+          padding: 7px; border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+          border-radius: 24px; background: color-mix(in srgb, var(--surface) 92%, transparent);
+          box-shadow: 0 18px 48px rgba(7, 59, 103, .2), 0 3px 10px rgba(15, 23, 42, .12);
+          backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+        }
+        .floating-nav::-webkit-scrollbar { display: none; }
+        .floating-nav a {
+          min-width: 76px; min-height: 56px; padding: 7px 10px;
+          display: grid; place-items: center; align-content: center; gap: 3px;
+          color: var(--muted); border-radius: 17px; font-size: .68rem; font-weight: 850;
+          transition: transform .18s ease, background .18s ease, color .18s ease;
+        }
+        .floating-nav a:hover { color: var(--primary); background: var(--primary-soft); transform: translateY(-1px); }
+        .floating-nav a.floating-active { color: white; background: var(--primary); box-shadow: 0 7px 18px color-mix(in srgb, var(--primary) 30%, transparent); }
         @media (max-width: 900px) {
-          .desktop-nav { display: none !important; }
           .desktop-only { display: none; }
-          .mobile-nav {
-            position: fixed; z-index: 60; left: 0; right: 0; bottom: 0;
-            display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-            background: var(--surface); border-top: 1px solid var(--border);
-            padding: .35rem max(.35rem, env(safe-area-inset-right)) calc(.35rem + env(safe-area-inset-bottom)) max(.35rem, env(safe-area-inset-left));
-          }
-          .mobile-nav a { display: grid; place-items: center; gap: 2px; padding: .35rem .2rem; color: var(--muted); font-size: .66rem; font-weight: 800; }
-          .mobile-nav a.mobile-active { color: var(--primary); background: var(--primary-soft); border-radius: 10px; }
+          .floating-nav { width: calc(100vw - 20px); justify-content: flex-start; border-radius: 21px; bottom: max(8px, env(safe-area-inset-bottom)); }
+          .floating-nav a { flex: 1 0 58px; min-width: 58px; min-height: 52px; padding-inline: 5px; font-size: .62rem; }
         }
       `}</style>
     </div>

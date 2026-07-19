@@ -12,7 +12,20 @@
           "package_name": "in.civicshield.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "44442755059-ma92fa1i1nu2atof4dtnr3c57qpu9de9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "in.civicshield.app",
+            "certificate_hash": "91bd8e373ce72be4b2bf3d8a68847e000a925d95"
+          }
+        },
+        {
+          "client_id": "44442755059-pdq7vt55dm3q2e93684ckd4ubpgor29t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCQbJKBarzsoeYS1-BKy1SEqYRlQ-IrzJA"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "44442755059-itcjshb84v7vi4klkroqam0ds0vcvqc7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

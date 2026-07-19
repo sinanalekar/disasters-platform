@@ -7,7 +7,14 @@
   },
   "auth": {
     "providers": {
-      "emailPassword": true
+      "anonymous": true,
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "Disasters",
+        "supportEmail": "sinanalekar9192@gmail.com",
+        "authorizedRedirectUris": [
+          "https://disasters-platform.vercel.app"
+        ]
+      }
     }
   }
 }

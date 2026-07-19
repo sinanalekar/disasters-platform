@@ -185,7 +185,7 @@ function AdminConsole() {
     try {
       await setDoc(doc(db, "adminInvites", email), { email, role: inviteRole, permissions: invitePermissions, invitedBy: user?.uid, invitedAt: serverTimestamp(), status: "pending" });
       await audit("access.invited", "email", email, `${ROLE_LABELS[inviteRole]} invitation created.`);
-      setInviteEmail(""); success(`Invitation access prepared for ${email}. They can now sign up or sign in.`);
+      setInviteEmail(""); success(`Invitation access prepared for ${email}. They can now continue with that Google account.`);
     } catch (err) { fail(err); }
   }
 
