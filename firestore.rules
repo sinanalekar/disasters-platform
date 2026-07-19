@@ -1,0 +1,131 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function bootstrapAdmin() {
+      return signedIn() && request.auth.token.email == 'sinanalekar9192@gmail.com';
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function hasProfile() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function isStaff() {
+      return bootstrapAdmin() || (hasProfile() && profile().data.role in [
+        'super_admin', 'admin', 'supervisor', 'dispatcher', 'field_responder'
+      ]);
+    }
+
+    function isAdmin() {
+      return bootstrapAdmin() || (hasProfile() && profile().data.role in ['super_admin', 'admin']);
+    }
+
+    function isSuperAdmin() {
+      return bootstrapAdmin() || (hasProfile() && profile().data.role == 'super_admin');
+    }
+
+    function hasPermission(permission) {
+      return bootstrapAdmin() || isSuperAdmin() || (
+        hasProfile() &&
+        'permissions' in profile().data &&
+        profile().data.permissions.hasAny([permission])
+      );
+    }
+
+    function canReadIncident(incidentId) {
+      let incident = get(/databases/$(database)/documents/incidents/$(incidentId));
+      return signedIn() && (
+        incident.data.reporterId == request.auth.uid ||
+        incident.data.assignedUserId == request.auth.uid ||
+        isStaff()
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isStaff());
+      allow create: if signedIn() && request.auth.uid == userId && (
+        (bootstrapAdmin() && request.resource.data.role == 'super_admin') ||
+        request.resource.data.role == 'citizen' ||
+        (
+          exists(/databases/$(database)/documents/adminInvites/$(request.auth.token.email)) &&
+          request.resource.data.role == get(/databases/$(database)/documents/adminInvites/$(request.auth.token.email)).data.role
+        )
+      );
+      allow update: if isSuperAdmin() || (
+        request.auth.uid == userId &&
+        request.resource.data.role == resource.data.role &&
+        request.resource.data.permissions == resource.data.permissions &&
+        request.resource.data.disabled == resource.data.disabled
+      );
+      allow delete: if isSuperAdmin() && request.auth.uid != userId;
+    }
+
+    match /adminInvites/{email} {
+      allow read: if signedIn() && (request.auth.token.email == email || isAdmin());
+      allow create, update, delete: if hasPermission('manage_roles');
+    }
+
+    match /incidents/{incidentId} {
+      allow create: if signedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow read: if signedIn() && (
+        resource.data.reporterId == request.auth.uid ||
+        resource.data.assignedUserId == request.auth.uid ||
+        isStaff()
+      );
+      allow update: if isStaff() || (
+        signedIn() &&
+        resource.data.reporterId == request.auth.uid &&
+        resource.data.status in ['submitted', 'under_review'] &&
+        request.resource.data.reporterId == resource.data.reporterId
+      );
+      allow delete: if hasPermission('delete_incidents');
+
+      match /messages/{messageId} {
+        allow read: if canReadIncident(incidentId);
+        allow create: if canReadIncident(incidentId) && request.resource.data.senderId == request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      match /timeline/{eventId} {
+        allow read: if canReadIncident(incidentId);
+        allow create: if canReadIncident(incidentId) && request.resource.data.actorId == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    match /authorities/{authorityId} {
+      allow read: if signedIn();
+      allow create, update, delete: if hasPermission('manage_authorities');
+    }
+
+    match /categories/{categoryId} {
+      allow read: if signedIn();
+      allow create, update, delete: if hasPermission('manage_settings');
+    }
+
+    match /settings/{settingId} {
+      allow read: if settingId == 'theme' || signedIn();
+      allow create, update, delete: if hasPermission('manage_settings');
+    }
+
+    match /notifications/{notificationId} {
+      allow read, update: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if hasPermission('view_audit_logs');
+      allow create: if isStaff() && request.resource.data.actorId == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

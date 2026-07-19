@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Disasters – Emergency & Public Safety Platform
 
-## Getting Started
+Disasters is a responsive web/PWA and Android application for reporting emergencies and civic issues, AI-assisted triage, configurable authority routing, real-time status tracking, and incident messaging.
 
-First, run the development server:
+## Included applications
+
+- Citizen web/PWA: reporting, media uploads, geolocation, tracking, messaging and notifications.
+- Authority operations: queue filters, assignment, status workflow, dispatch and audit events.
+- `/admin`: role-based access, email invitations, per-user permissions, authority endpoints, AI providers, organization themes, SLA and APK settings, and audit logs.
+- Android wrapper: Capacitor app loading the secured Vercel deployment, with a GitHub Actions APK build/release workflow.
+
+## Free service architecture
+
+- Firebase Authentication and Cloud Firestore on the Spark plan.
+- Vercel Hobby deployment and Vercel Blob Hobby media storage.
+- OpenStreetMap links for mapping without a paid maps key.
+- Gemini through the supplied server-side key, three selectable free local Ollama models, and an always-available deterministic rules fallback.
+
+Firebase Cloud Storage is intentionally not used because new projects require the Blaze plan. API keys and Vercel Blob credentials remain server-side and are excluded from Git.
+
+## Local development
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then open `http://localhost:3000`. Email/password Authentication must be enabled in the linked Firebase project.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Validation
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
 
-## Learn More
+## Android
 
-To learn more about Next.js, take a look at the following resources:
+The committed `android/` project is generated with Capacitor. Update `CAPACITOR_SERVER_URL`, run `npm run cap:sync`, and build with Android Studio or the included GitHub workflow. Tagged releases attach `Disasters.apk`, which is linked from the app’s Settings page.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Safety boundary
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The app prominently directs life-threatening emergencies to India’s 112 service. AI only recommends category and urgency; critical or uncertain cases require human review. External authority automation works when an administrator configures an agency-supported webhook, email, phone number, or internal dashboard route.

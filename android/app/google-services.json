@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "44442755059",
+    "project_id": "civicshield-india-sinan",
+    "storage_bucket": "civicshield-india-sinan.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:44442755059:android:525d699f392affbca9bc86",
+        "android_client_info": {
+          "package_name": "in.civicshield.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQbJKBarzsoeYS1-BKy1SEqYRlQ-IrzJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
