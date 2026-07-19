@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuth } from "@/lib/auth-context";
-import { ROLE_LABELS } from "@/lib/constants";
+import { ROLE_LABELS, SUPER_ADMIN_EMAIL } from "@/lib/constants";
 import { Spinner } from "./ui";
 
 const citizenNav = [
@@ -51,7 +51,8 @@ export function ProtectedPage({ children, adminOnly = false, staffOnly = false }
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { profile, isAdmin, isStaff, signOut } = useAuth();
+  const { user, profile, isAdmin, isStaff, signOut } = useAuth();
+  const needsAdminVerification = user?.email?.toLowerCase() === SUPER_ADMIN_EMAIL && !user.emailVerified;
   const nav = [
     ...citizenNav,
     ...(isStaff || isAdmin ? [{ href: "/authority", label: "Operations", icon: ClipboardList }] : []),
@@ -100,7 +101,14 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main id="main-content" className="container" style={{ paddingBlock: "2rem 7rem" }}>{children}</main>
+      <main id="main-content" className="container" style={{ paddingBlock: "2rem 7rem" }}>
+        {needsAdminVerification && (
+          <div className="alert" role="status" style={{ marginBottom: 18 }}>
+            Check your email and verify this address, then sign out and sign in again to activate super administrator access.
+          </div>
+        )}
+        {children}
+      </main>
       <nav aria-label="Mobile navigation" className="mobile-nav">
         {nav.slice(0, 5).map(({ href, label, icon: Icon }) => (
           <Link key={href} href={href} className={clsx(pathname.startsWith(href) && "mobile-active")}>

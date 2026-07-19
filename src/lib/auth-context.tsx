@@ -13,6 +13,7 @@ import {
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -44,14 +45,24 @@ const AuthContext = createContext<AuthValue | null>(null);
 async function ensureProfile(user: User) {
   const ref = doc(db, "users", user.uid);
   const existing = await getDoc(ref);
-  if (existing.exists()) return;
-
   const email = (user.email || "").toLowerCase();
+  if (existing.exists()) {
+    if (email === SUPER_ADMIN_EMAIL && user.emailVerified && existing.data().role !== "super_admin") {
+      await setDoc(ref, {
+        role: "super_admin",
+        permissions: ROLE_DEFAULT_PERMISSIONS.super_admin,
+        disabled: false,
+        updatedAt: serverTimestamp(),
+      }, { merge: true });
+    }
+    return;
+  }
+
   const invite = email ? await getDoc(doc(db, "adminInvites", email)) : null;
   let role: UserRole = "citizen";
   let permissions = ROLE_DEFAULT_PERMISSIONS.citizen;
 
-  if (email === SUPER_ADMIN_EMAIL) {
+  if (email === SUPER_ADMIN_EMAIL && user.emailVerified) {
     role = "super_admin";
     permissions = ROLE_DEFAULT_PERMISSIONS.super_admin;
   } else if (invite?.exists()) {
@@ -111,6 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(async (name: string, email: string, password: string) => {
     const credential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(credential.user, { displayName: name });
+    if (email.trim().toLowerCase() === SUPER_ADMIN_EMAIL) {
+      await sendEmailVerification(credential.user, { url: `${window.location.origin}/auth` });
+    }
     await ensureProfile(credential.user);
   }, []);
 

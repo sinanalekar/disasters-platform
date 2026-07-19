@@ -7,7 +7,9 @@ service cloud.firestore {
     }
 
     function bootstrapAdmin() {
-      return signedIn() && request.auth.token.email == 'sinanalekar9192@gmail.com';
+      return signedIn() &&
+        request.auth.token.email == 'sinanalekar9192@gmail.com' &&
+        request.auth.token.email_verified == true;
     }
 
     function profile() {
